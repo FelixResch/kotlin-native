@@ -40,7 +40,7 @@ class KonanConfig(val project: Project, val configuration: CompilerConfiguration
             if (configuration.get(KonanConfigKeys.NOSTDLIB) ?: false) {
                 return fromCommandLine
             }
-            return fromCommandLine + "stdlib"
+            return fromCommandLine + if (configuration.getBoolean(KonanConfigKeys.DEBUG)) "stdlib-debug" else "stdlib"
         }
 
     private val repositories = configuration.getList(KonanConfigKeys.REPOSITORIES) ?: emptyList()
