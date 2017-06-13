@@ -356,6 +356,10 @@ targetList.each { target ->
             include("*.bc")
             into("klib/stdlib/targets/$target/native")
         }
+        from(project(':runtime').file("build/$target")) {
+            include("*.bc")
+            into("klib/stdlib-debug/targets/$target/native")
+        }
         from(project(':runtime').file("build/${target}Stdlib")) {
             include('**')
             into('klib/stdlib')
