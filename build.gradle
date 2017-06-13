@@ -370,7 +370,7 @@ targetList.each { target ->
         }
         from(project(':runtime').file("build/${target}Start-debug.bc")) {
             rename("${target}Start-debug.bc", 'start-debug.bc')
-            into("klib/stdlib/targets/$target/native")
+            into("klib/stdlib-debug/targets/$target/native")
         }
     }
 }
