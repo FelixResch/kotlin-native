@@ -161,7 +161,11 @@ public enum class CharCategory(public val value: Int, public val code: String) {
     public operator fun contains(char: Char): Boolean = char.getType() == this.value
 
     public companion object {
-        private val categoryMap by lazy { CharCategory.values().associateBy { it.value } }
-        public fun valueOf(category: Int): CharCategory = categoryMap[category] ?: throw IllegalArgumentException("Category #$category is not defined.")
+        public fun valueOf(category: Int): CharCategory =
+            when(category) {
+                in 0..16 -> values()[category]
+                in 18..30 -> values()[category - 1]
+                else -> throw IllegalArgumentException("Category #$category is not defined.")
+            }
     }
 }

@@ -64,7 +64,6 @@ fun testCase() {
     */
 }
 
-
 fun testCategory() {
     assertEquals('\n'.category.value,     CharCategory.CONTROL.value)
     assertEquals('1'.category.value,      CharCategory.DECIMAL_DIGIT_NUMBER.value)
@@ -87,6 +86,21 @@ fun testCategory() {
     assertTrue('_'      in CharCategory.CONNECTOR_PUNCTUATION)
     assertTrue('$'      in CharCategory.CURRENCY_SYMBOL)
     assertTrue('\u2029' in CharCategory.PARAGRAPH_SEPARATOR)
+
+    try {
+        CharCategory.valueOf(-1)
+        throw AssertionError()
+    } catch (e: IllegalArgumentException) {}
+
+    try {
+        CharCategory.valueOf(31)
+        throw AssertionError()
+    } catch (e: IllegalArgumentException) {}
+
+    try {
+        CharCategory.valueOf(17)
+        throw AssertionError()
+    } catch (e: IllegalArgumentException) {}
 }
 
 fun main(args: Array<String>) {
