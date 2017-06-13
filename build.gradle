@@ -344,9 +344,11 @@ task crossDistRuntime(type: Copy) {
 
 targetList.each { target ->
     task("${target}CrossDistRuntime", type: Copy) {
-        dependsOn ":runtime:${target}Runtime" 
-        dependsOn ":backend.native:${target}Stdlib" 
-        dependsOn ":backend.native:${target}Start" 
+        dependsOn ":runtime:${target}Runtime"
+        dependsOn ":backend.native:${target}Stdlib"
+        dependsOn ":backend.native:${target}Stdlib-debug"
+        dependsOn ":backend.native:${target}Start"
+        dependsOn ":backend.native:${target}Start-debug"
 
         destinationDir file('dist')
 
@@ -358,8 +360,16 @@ targetList.each { target ->
             include('**')
             into('klib/stdlib')
         }
+        from(project(':runtime').file("build/${target}Stdlib-debug")) {
+            include('**')
+            into('klib/stdlib-debug')
+        }
         from(project(':runtime').file("build/${target}Start.bc")) {
             rename("${target}Start.bc", 'start.bc')
+            into("klib/stdlib/targets/$target/native")
+        }
+        from(project(':runtime').file("build/${target}Start-debug.bc")) {
+            rename("${target}Start-debug.bc", 'start-debug.bc')
             into("klib/stdlib/targets/$target/native")
         }
     }

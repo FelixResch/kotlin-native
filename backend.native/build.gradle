@@ -144,30 +144,35 @@ build.dependsOn 'compilerClasses','cli_bcClasses','bc_frontendClasses'
 
 
 // These are just a couple of aliases
-task stdlib(dependsOn: "${host}Stdlib") 
+task stdlib(dependsOn: "${host}Stdlib")
+task debugStdlib(dependsOn: "${host}Stdlib-debug")
 task start(dependsOn: "${host}Start")
+task debugStart(dependsOn: "${host}Start-debug")
 
 // These files are built before the 'dist' is complete,
 // so we provide custom values for
 // -runtime, -properties, -library and -Djava.library.path
 
 targetList.each { target ->
+    def konanJvmArgs = ["-ea",
+    "-Dkonan.home=${project.parent.file('dist')}",
+    "-Djava.library.path=${project.buildDir}/nativelibs",
+    "-Dfile.encoding=UTF-8"]
+
+    def konanStdlibArgs = ['-nopack', '-nostdlib','-ea',
+                     '-produce', 'library', '-target', target,
+                     '-runtime', project(':runtime').file("build/${target}/runtime.bc"),
+                     '-properties', project(':backend.native').file('konan.properties'),
+                     project(':runtime').file('src/main/kotlin'),
+                     project(':Interop:Runtime').file('src/main/kotlin'),
+                     project(':Interop:Runtime').file('src/native/kotlin'),
+                     *project.globalBuildArgs]
+
     task("${target}Stdlib", type: JavaExec) {
         main = 'org.jetbrains.kotlin.cli.bc.K2NativeKt'
         classpath = project.configurations.cli_bc
-        jvmArgs "-ea", 
-            "-Dkonan.home=${project.parent.file('dist')}",
-            "-Djava.library.path=${project.buildDir}/nativelibs",
-            "-Dfile.encoding=UTF-8"
-        args('-output', project(':runtime').file("build/${target}Stdlib"),
-            '-nopack', '-nostdlib','-ea',
-            '-produce', 'library', '-target', target,
-            '-runtime', project(':runtime').file("build/${target}/runtime.bc"),
-            '-properties', project(':backend.native').file('konan.properties'),
-        project(':runtime').file('src/main/kotlin'), 
-        project(':Interop:Runtime').file('src/main/kotlin'),
-        project(':Interop:Runtime').file('src/native/kotlin'),
-        *project.globalBuildArgs)
+        jvmArgs.addAll(konanJvmArgs)
+        args = [*konanStdlibArgs, '-output', project(':runtime').file("build/${target}Stdlib")]
 
         inputs.dir(project(':runtime').file('src/main/kotlin'))
         inputs.dir(project(':Interop:Runtime').file('src/main/kotlin'))
@@ -176,28 +181,50 @@ targetList.each { target ->
 
         dependsOn ":runtime:${target}Runtime"
     }
-}
 
-targetList.each { target ->
+    task("${target}Stdlib-debug", type: JavaExec) {
+        main = 'org.jetbrains.kotlin.cli.bc.K2NativeKt'
+        classpath = project.configurations.cli_bc
+        jvmArgs(*jvmArgs)
+        args = [*konanStdlibArgs, '-g', '-output', project(':runtime').file("build/${target}Stdlib-debug")]
+
+        inputs.dir(project(':runtime').file('src/main/kotlin'))
+        inputs.dir(project(':Interop:Runtime').file('src/main/kotlin'))
+        inputs.dir(project(':Interop:Runtime').file('src/native/kotlin'))
+        outputs.file(project(':runtime').file("build/${target}Stdlib-debug"))
+
+        dependsOn ":runtime:${target}Runtime"
+    }
+
+    def konanLauncherArgs = ['-nopack', '-nostdlib', '-ea',
+                             '-produce', 'bitcode', '-target', target,
+                             '-library', project(':runtime').file("build/${target}Stdlib"),
+                             '-runtime', project(':runtime').file("build/${target}/runtime.bc"),
+                             '-properties', rootProject.konanPropertiesFile.canonicalPath,
+                             project(':runtime').file('src/launcher/kotlin'),
+                             *project.globalBuildArgs]
     task("${target}Start", type: JavaExec) {
         main = 'org.jetbrains.kotlin.cli.bc.K2NativeKt'
         classpath = project.configurations.cli_bc
-        jvmArgs "-ea", 
-            "-Dkonan.home=${project.parent.file('dist')}",
-            "-Djava.library.path=${project.buildDir}/nativelibs"
-        args('-output', project(':runtime').file("build/${target}Start"), 
-            '-nopack', '-nostdlib', '-ea',
-            '-produce', 'bitcode', '-target', target,
-            '-library', project(':runtime').file("build/${target}Stdlib"),
-            '-runtime', project(':runtime').file("build/${target}/runtime.bc"),
-            '-properties', rootProject.konanPropertiesFile.canonicalPath,
-        project(':runtime').file('src/launcher/kotlin'), 
-        *project.globalBuildArgs)
+        jvmArgs(*jvmArgs)
+        args = [*konanLauncherArgs, '-output', project(':runtime').file("build/${target}Start")]
 
         inputs.dir(project(':runtime').file('src/launcher/kotlin'))
         outputs.file(project(':runtime').file("build/${target}Start"))
 
         dependsOn ":runtime:${target}Runtime", "${target}Stdlib"
+    }
+
+    task("${target}Start-debug", type: JavaExec) {
+        main = 'org.jetbrains.kotlin.cli.bc.K2NativeKt'
+        classpath = project.configurations.cli_bc
+        jvmArgs(*jvmArgs)
+        args = [*konanLauncherArgs, '-g', '-output', project(':runtime').file("build/${target}Start-debug")]
+
+        inputs.dir(project(':runtime').file('src/launcher/kotlin'))
+        outputs.file(project(':runtime').file("build/${target}Start-debug"))
+
+        dependsOn ":runtime:${target}Runtime", "${target}Stdlib-debug"
     }
 }
 
